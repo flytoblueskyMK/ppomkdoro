@@ -1,0 +1,1657 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="집중">
+    <title>집중 | 뽀모도로 v2</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;700;900&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-deep: #0a0a0f;
+            --bg-surface: #12121a;
+            --accent-focus: #ff6b35;
+            --accent-rest: #4ecdc4;
+            --text-primary: #f5f5f7;
+            --text-secondary: #6b7280;
+            --text-muted: #3d3d4a;
+            --glass: rgba(255, 255, 255, 0.03);
+            --glass-border: rgba(255, 255, 255, 0.08);
+            --flash-color: #ff6b35;
+            --font-scale: 1;
+        }
+
+        /* 테마: 기본 다크 */
+        [data-theme="dark"] {
+            --bg-deep: #0a0a0f;
+            --bg-surface: #12121a;
+            --text-primary: #f5f5f7;
+            --text-secondary: #6b7280;
+            --text-muted: #3d3d4a;
+            --glass: rgba(255, 255, 255, 0.03);
+            --glass-border: rgba(255, 255, 255, 0.08);
+        }
+
+        /* 테마: 소프트 다크 (눈 편한) */
+        [data-theme="soft-dark"] {
+            --bg-deep: #1a1a2e;
+            --bg-surface: #252540;
+            --text-primary: #e0e0e0;
+            --text-secondary: #9090a0;
+            --text-muted: #606070;
+            --glass: rgba(255, 255, 255, 0.05);
+            --glass-border: rgba(255, 255, 255, 0.1);
+        }
+
+        /* 테마: 세피아 (따뜻한) */
+        [data-theme="sepia"] {
+            --bg-deep: #2d2a24;
+            --bg-surface: #3d3930;
+            --text-primary: #e8dcc8;
+            --text-secondary: #a89880;
+            --text-muted: #706858;
+            --glass: rgba(255, 240, 220, 0.05);
+            --glass-border: rgba(255, 240, 220, 0.1);
+        }
+
+        /* 테마: 라이트 */
+        [data-theme="light"] {
+            --bg-deep: #f5f5f7;
+            --bg-surface: #ffffff;
+            --text-primary: #1a1a1a;
+            --text-secondary: #666666;
+            --text-muted: #999999;
+            --glass: rgba(0, 0, 0, 0.03);
+            --glass-border: rgba(0, 0, 0, 0.08);
+        }
+
+        /* 테마: 그린 (눈 보호) */
+        [data-theme="green"] {
+            --bg-deep: #1a2e1a;
+            --bg-surface: #243524;
+            --text-primary: #c8e8c8;
+            --text-secondary: #80a880;
+            --text-muted: #506850;
+            --glass: rgba(200, 255, 200, 0.05);
+            --glass-border: rgba(200, 255, 200, 0.1);
+        }
+
+        /* 글씨 크기 */
+        [data-font-size="small"] { --font-scale: 0.85; }
+        [data-font-size="normal"] { --font-scale: 1; }
+        [data-font-size="large"] { --font-scale: 1.15; }
+        [data-font-size="xlarge"] { --font-scale: 1.3; }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+            -webkit-touch-callout: none;
+            -webkit-user-select: none;
+            user-select: none;
+        }
+
+        html, body {
+            height: 100%;
+            overflow: hidden;
+        }
+
+        body {
+            font-family: 'Noto Sans KR', -apple-system, sans-serif;
+            background: var(--bg-deep);
+            color: var(--text-primary);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100dvh;
+            padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+        }
+
+        /* 전체화면 깜빡임 오버레이 */
+        .fullscreen-flash {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: var(--flash-color);
+            opacity: 0;
+            pointer-events: none;
+            z-index: 9999;
+            transition: opacity 0.1s ease;
+        }
+
+        .fullscreen-flash.active {
+            animation: fullFlash 0.3s ease;
+        }
+
+        @keyframes fullFlash {
+            0%, 100% { opacity: 0; }
+            50% { opacity: 0.6; }
+        }
+
+        /* 외곽 테두리 깜빡임 */
+        .border-flash {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            border: 8px solid var(--flash-color);
+            opacity: 0;
+            pointer-events: none;
+            z-index: 9998;
+        }
+
+        .border-flash.active {
+            animation: borderFlash 0.3s ease;
+        }
+
+        @keyframes borderFlash {
+            0%, 100% { opacity: 0; }
+            50% { opacity: 1; }
+        }
+
+        /* 앰비언트 배경 */
+        .ambient {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: radial-gradient(ellipse at 30% 20%, rgba(255, 107, 53, 0.08) 0%, transparent 50%),
+                        radial-gradient(ellipse at 70% 80%, rgba(78, 205, 196, 0.05) 0%, transparent 50%);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .container {
+            position: relative;
+            z-index: 1;
+            width: 100%;
+            max-width: 420px;
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 1.5rem;
+        }
+
+        /* 헤더 */
+        .header {
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .session-badge {
+            background: var(--glass);
+            border: 1px solid var(--glass-border);
+            padding: 0.5rem 1rem;
+            border-radius: 100px;
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+        }
+
+        .session-badge span {
+            color: var(--accent-focus);
+            font-weight: 700;
+        }
+
+        .header-buttons {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .icon-btn {
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            background: var(--glass);
+            border: 1px solid var(--glass-border);
+            color: var(--text-secondary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 1.2rem;
+            transition: all 0.2s ease;
+        }
+
+        .icon-btn:active {
+            transform: scale(0.95);
+            background: rgba(255, 255, 255, 0.08);
+        }
+
+        /* 타이머 디스플레이 */
+        .timer-container {
+            position: relative;
+            width: 280px;
+            height: 280px;
+        }
+
+        .timer-ring {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+
+        .timer-ring svg {
+            transform: rotate(-90deg);
+            width: 100%;
+            height: 100%;
+        }
+
+        .timer-ring .bg {
+            fill: none;
+            stroke: var(--glass-border);
+            stroke-width: 6;
+        }
+
+        .timer-ring .progress {
+            fill: none;
+            stroke: var(--accent-focus);
+            stroke-width: 6;
+            stroke-linecap: round;
+            transition: stroke-dashoffset 1s linear, stroke 0.3s ease;
+        }
+
+        .timer-display {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+        }
+
+        .time-text {
+            font-family: 'Space Mono', monospace;
+            font-size: calc(4rem * var(--font-scale));
+            font-weight: 700;
+            letter-spacing: -2px;
+            line-height: 1;
+        }
+
+        .mode-label {
+            font-size: calc(0.9rem * var(--font-scale));
+            color: var(--text-secondary);
+            margin-top: 0.5rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        /* 동기부여 문구 */
+        .motivation-container {
+            width: 100%;
+            min-height: 60px;
+            background: var(--glass);
+            border: 1px solid var(--glass-border);
+            border-radius: 16px;
+            padding: 1rem;
+            text-align: center;
+        }
+
+        .motivation-text {
+            font-size: calc(1rem * var(--font-scale));
+            color: var(--text-primary);
+            font-weight: 500;
+            line-height: 1.4;
+            animation: fadeInText 0.5s ease;
+        }
+
+        @keyframes fadeInText {
+            from { opacity: 0; transform: translateY(5px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* 컨트롤 버튼 */
+        .controls {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+        }
+
+        .btn-main {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: var(--accent-focus);
+            border: none;
+            color: white;
+            font-size: 2rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 8px 32px rgba(255, 107, 53, 0.3);
+            transition: all 0.2s ease;
+        }
+
+        .btn-main:active {
+            transform: scale(0.95);
+        }
+
+        .btn-main.rest {
+            background: var(--accent-rest);
+            box-shadow: 0 8px 32px rgba(78, 205, 196, 0.3);
+        }
+
+        .btn-secondary {
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            background: var(--glass);
+            border: 1px solid var(--glass-border);
+            color: var(--text-secondary);
+            font-size: 1.2rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+        }
+
+        .btn-secondary:active {
+            transform: scale(0.95);
+        }
+
+        /* 오늘 통계 */
+        .today-stats {
+            width: 100%;
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 0.75rem;
+        }
+
+        .stat-card {
+            background: var(--glass);
+            border: 1px solid var(--glass-border);
+            border-radius: 16px;
+            padding: 1rem;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-family: 'Space Mono', monospace;
+            font-size: calc(1.5rem * var(--font-scale));
+            font-weight: 700;
+            color: var(--accent-focus);
+        }
+
+        .stat-label {
+            font-size: calc(0.7rem * var(--font-scale));
+            color: var(--text-muted);
+            margin-top: 0.25rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        /* 모달 오버레이 */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(10px);
+            z-index: 100;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 1.5rem;
+        }
+
+        .modal-overlay.active {
+            display: flex;
+        }
+
+        .modal {
+            background: var(--bg-surface);
+            border: 1px solid var(--glass-border);
+            border-radius: 24px;
+            width: 100%;
+            max-width: 380px;
+            max-height: 85vh;
+            overflow-y: auto;
+            padding: 1.5rem;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .modal-title {
+            font-size: 1.25rem;
+            font-weight: 700;
+        }
+
+        .modal-close {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: var(--glass);
+            border: none;
+            color: var(--text-secondary);
+            font-size: 1.2rem;
+            cursor: pointer;
+        }
+
+        /* 설정 항목 */
+        .setting-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .setting-label {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            margin-bottom: 0.75rem;
+            display: block;
+        }
+
+        .setting-options {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+
+        .setting-btn {
+            padding: 0.6rem 1rem;
+            border-radius: 100px;
+            background: var(--glass);
+            border: 1px solid var(--glass-border);
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .setting-btn.active {
+            background: var(--accent-focus);
+            border-color: var(--accent-focus);
+            color: white;
+        }
+
+        /* 색상 선택 */
+        .color-options {
+            display: flex;
+            gap: 0.75rem;
+            flex-wrap: wrap;
+        }
+
+        .color-btn {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            border: 3px solid transparent;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .color-btn.active {
+            border-color: white;
+            transform: scale(1.1);
+        }
+
+        /* 문구 입력 */
+        .motivation-input-container {
+            margin-bottom: 1rem;
+        }
+
+        .motivation-input {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            border-radius: 12px;
+            background: var(--glass);
+            border: 1px solid var(--glass-border);
+            color: var(--text-primary);
+            font-size: 0.95rem;
+            font-family: 'Noto Sans KR', sans-serif;
+            outline: none;
+            transition: border-color 0.2s ease;
+        }
+
+        .motivation-input:focus {
+            border-color: var(--accent-focus);
+        }
+
+        .motivation-input::placeholder {
+            color: var(--text-muted);
+        }
+
+        .motivation-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .motivation-item {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.75rem;
+            background: var(--glass);
+            border-radius: 12px;
+        }
+
+        .motivation-item-text {
+            flex: 1;
+            font-size: 0.9rem;
+            color: var(--text-primary);
+        }
+
+        .motivation-item-delete {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            background: rgba(255, 59, 48, 0.2);
+            border: none;
+            color: #ff3b30;
+            cursor: pointer;
+            font-size: 1rem;
+        }
+
+        /* 메타인지 입력 모달 */
+        .meta-input-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .meta-input-label {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            margin-bottom: 0.5rem;
+            display: block;
+        }
+
+        .meta-input {
+            width: 100%;
+            padding: 1rem;
+            border-radius: 16px;
+            background: var(--glass);
+            border: 2px solid var(--glass-border);
+            color: var(--text-primary);
+            font-family: 'Space Mono', monospace;
+            font-size: 2rem;
+            text-align: center;
+            outline: none;
+        }
+
+        .meta-input:focus {
+            border-color: var(--accent-focus);
+        }
+
+        .meta-btn {
+            width: 100%;
+            padding: 1rem;
+            border-radius: 16px;
+            background: var(--accent-focus);
+            border: none;
+            color: white;
+            font-size: 1rem;
+            font-weight: 700;
+            cursor: pointer;
+            margin-top: 1rem;
+        }
+
+        /* 리포트 */
+        .report-section {
+            margin-bottom: 1.5rem;
+        }
+
+        .report-title {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            margin-bottom: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .report-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 0.75rem;
+        }
+
+        .report-card {
+            background: var(--glass);
+            border: 1px solid var(--glass-border);
+            border-radius: 16px;
+            padding: 1rem;
+            text-align: center;
+        }
+
+        .report-value {
+            font-family: 'Space Mono', monospace;
+            font-size: 1.75rem;
+            font-weight: 700;
+        }
+
+        .report-value.good {
+            color: #34c759;
+        }
+
+        .report-value.warn {
+            color: #ff9500;
+        }
+
+        .report-value.bad {
+            color: #ff3b30;
+        }
+
+        .report-label {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            margin-top: 0.25rem;
+        }
+
+        .meta-history {
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .meta-history-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.75rem;
+            background: var(--glass);
+            border-radius: 12px;
+            margin-bottom: 0.5rem;
+        }
+
+        .meta-session {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+
+        .meta-numbers {
+            display: flex;
+            gap: 1rem;
+            font-family: 'Space Mono', monospace;
+        }
+
+        .meta-predicted {
+            color: var(--text-secondary);
+        }
+
+        .meta-actual {
+            color: var(--accent-focus);
+            font-weight: 700;
+        }
+
+        .meta-accuracy {
+            padding: 0.25rem 0.5rem;
+            border-radius: 6px;
+            font-size: 0.8rem;
+            font-weight: 700;
+        }
+
+        .meta-accuracy.good {
+            background: rgba(52, 199, 89, 0.2);
+            color: #34c759;
+        }
+
+        .meta-accuracy.warn {
+            background: rgba(255, 149, 0, 0.2);
+            color: #ff9500;
+        }
+
+        .meta-accuracy.bad {
+            background: rgba(255, 59, 48, 0.2);
+            color: #ff3b30;
+        }
+
+        .reset-btn {
+            width: 100%;
+            padding: 1rem;
+            border-radius: 12px;
+            background: rgba(255, 59, 48, 0.1);
+            border: 1px solid rgba(255, 59, 48, 0.3);
+            color: #ff3b30;
+            font-size: 0.9rem;
+            cursor: pointer;
+            margin-top: 1rem;
+        }
+
+        /* 토글 스위치 */
+        .toggle-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.75rem 0;
+        }
+
+        .toggle-label {
+            font-size: 0.95rem;
+            color: var(--text-primary);
+        }
+
+        .toggle {
+            width: 52px;
+            height: 32px;
+            background: var(--glass-border);
+            border-radius: 16px;
+            position: relative;
+            cursor: pointer;
+            transition: background 0.2s ease;
+        }
+
+        .toggle.active {
+            background: var(--accent-focus);
+        }
+
+        .toggle::after {
+            content: '';
+            position: absolute;
+            width: 26px;
+            height: 26px;
+            background: white;
+            border-radius: 50%;
+            top: 3px;
+            left: 3px;
+            transition: transform 0.2s ease;
+        }
+
+        .toggle.active::after {
+            transform: translateX(20px);
+        }
+
+        /* 탭 네비게이션 */
+        .tab-nav {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1.5rem;
+            background: var(--glass);
+            padding: 0.25rem;
+            border-radius: 12px;
+        }
+
+        .tab-btn {
+            flex: 1;
+            padding: 0.6rem;
+            border-radius: 10px;
+            background: transparent;
+            border: none;
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .tab-btn.active {
+            background: var(--accent-focus);
+            color: white;
+        }
+
+        /* 밝기 슬라이더 */
+        .brightness-slider-container {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .brightness-slider {
+            flex: 1;
+            height: 8px;
+            border-radius: 4px;
+            background: var(--glass-border);
+            -webkit-appearance: none;
+            appearance: none;
+            outline: none;
+        }
+
+        .brightness-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: var(--accent-focus);
+            cursor: pointer;
+        }
+
+        .brightness-value {
+            font-family: 'Space Mono', monospace;
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            min-width: 45px;
+        }
+
+        /* 화면 밝기 오버레이 */
+        .brightness-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: black;
+            pointer-events: none;
+            z-index: 9997;
+            opacity: 0;
+        }
+    </style>
+</head>
+<body>
+    <!-- 밝기 조절 오버레이 -->
+    <div class="brightness-overlay" id="brightnessOverlay"></div>
+
+    <!-- 깜빡임 오버레이 -->
+    <div class="fullscreen-flash" id="fullscreenFlash"></div>
+    <div class="border-flash" id="borderFlash"></div>
+    
+    <div class="ambient"></div>
+
+    <div class="container">
+        <!-- 헤더 -->
+        <div class="header">
+            <div class="session-badge">오늘 <span id="todaySession">0</span>번째 세션</div>
+            <div class="header-buttons">
+                <button class="icon-btn" id="reportBtn">📊</button>
+                <button class="icon-btn" id="settingsBtn">⚙️</button>
+            </div>
+        </div>
+
+        <!-- 타이머 -->
+        <div class="timer-container">
+            <div class="timer-ring">
+                <svg viewBox="0 0 280 280">
+                    <circle class="bg" cx="140" cy="140" r="130"></circle>
+                    <circle class="progress" id="progressRing" cx="140" cy="140" r="130" 
+                            stroke-dasharray="816.81" stroke-dashoffset="0"></circle>
+                </svg>
+            </div>
+            <div class="timer-display">
+                <div class="time-text" id="timeDisplay">25:00</div>
+                <div class="mode-label" id="modeLabel">집중</div>
+            </div>
+        </div>
+
+        <!-- 동기부여 문구 -->
+        <div class="motivation-container">
+            <div class="motivation-text" id="motivationText">교지불여졸속 - 80점으로 먼저 끝내고 다듬자</div>
+        </div>
+
+        <!-- 컨트롤 -->
+        <div class="controls">
+            <button class="btn-secondary" id="resetBtn">↺</button>
+            <button class="btn-main" id="mainBtn">▶</button>
+            <button class="btn-secondary" id="skipBtn">⏭</button>
+        </div>
+
+        <!-- 오늘 통계 -->
+        <div class="today-stats">
+            <div class="stat-card">
+                <div class="stat-value" id="totalProblems">0</div>
+                <div class="stat-label">총 처리량</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="avgAccuracy">-</div>
+                <div class="stat-label">예측 정확도</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="focusMinutes">0</div>
+                <div class="stat-label">집중(분)</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 설정 모달 -->
+    <div class="modal-overlay" id="settingsModal">
+        <div class="modal">
+            <div class="modal-header">
+                <div class="modal-title">설정</div>
+                <button class="modal-close" id="closeSettings">✕</button>
+            </div>
+
+            <div class="tab-nav">
+                <button class="tab-btn active" data-tab="display">화면</button>
+                <button class="tab-btn" data-tab="time">시간</button>
+                <button class="tab-btn" data-tab="flash">깜빡임</button>
+                <button class="tab-btn" data-tab="motivation">문구</button>
+            </div>
+
+            <!-- 화면 설정 탭 -->
+            <div class="tab-content" id="tab-display">
+                <div class="setting-group">
+                    <label class="setting-label">테마 (눈 보호)</label>
+                    <div class="setting-options">
+                        <button class="setting-btn" data-theme="dark">기본 다크</button>
+                        <button class="setting-btn active" data-theme="soft-dark">소프트</button>
+                        <button class="setting-btn" data-theme="sepia">세피아</button>
+                        <button class="setting-btn" data-theme="green">그린</button>
+                        <button class="setting-btn" data-theme="light">라이트</button>
+                    </div>
+                </div>
+
+                <div class="setting-group">
+                    <label class="setting-label">글씨 크기</label>
+                    <div class="setting-options">
+                        <button class="setting-btn" data-font-size="small">작게</button>
+                        <button class="setting-btn active" data-font-size="normal">보통</button>
+                        <button class="setting-btn" data-font-size="large">크게</button>
+                        <button class="setting-btn" data-font-size="xlarge">아주 크게</button>
+                    </div>
+                </div>
+
+                <div class="setting-group">
+                    <label class="setting-label">화면 밝기 (어둡게)</label>
+                    <div class="brightness-slider-container">
+                        <input type="range" class="brightness-slider" id="brightnessSlider" min="50" max="100" value="100">
+                        <span class="brightness-value" id="brightnessValue">100%</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 시간 설정 탭 -->
+            <div class="tab-content" id="tab-time" style="display: none;">
+                <div class="setting-group">
+                    <label class="setting-label">집중 시간 (분)</label>
+                    <div class="setting-options">
+                        <button class="setting-btn" data-focus="15">15</button>
+                        <button class="setting-btn" data-focus="20">20</button>
+                        <button class="setting-btn active" data-focus="25">25</button>
+                        <button class="setting-btn" data-focus="30">30</button>
+                        <button class="setting-btn" data-focus="45">45</button>
+                    </div>
+                </div>
+
+                <div class="setting-group">
+                    <label class="setting-label">휴식 시간 (분)</label>
+                    <div class="setting-options">
+                        <button class="setting-btn" data-rest="3">3</button>
+                        <button class="setting-btn active" data-rest="5">5</button>
+                        <button class="setting-btn" data-rest="7">7</button>
+                        <button class="setting-btn" data-rest="10">10</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 깜빡임 설정 탭 -->
+            <div class="tab-content" id="tab-flash" style="display: none;">
+                <div class="setting-group">
+                    <label class="setting-label">깜빡임 간격 (초)</label>
+                    <div class="setting-options">
+                        <button class="setting-btn" data-pace="0">끄기</button>
+                        <button class="setting-btn active" data-pace="10">10</button>
+                        <button class="setting-btn" data-pace="15">15</button>
+                        <button class="setting-btn" data-pace="20">20</button>
+                        <button class="setting-btn" data-pace="30">30</button>
+                    </div>
+                </div>
+
+                <div class="setting-group">
+                    <label class="setting-label">깜빡임 스타일</label>
+                    <div class="setting-options">
+                        <button class="setting-btn active" data-flash-style="border">테두리</button>
+                        <button class="setting-btn" data-flash-style="fullscreen">전체화면</button>
+                    </div>
+                </div>
+
+                <div class="setting-group">
+                    <label class="setting-label">깜빡임 색상</label>
+                    <div class="color-options">
+                        <button class="color-btn active" data-color="#ff6b35" style="background: #ff6b35;"></button>
+                        <button class="color-btn" data-color="#ff3b30" style="background: #ff3b30;"></button>
+                        <button class="color-btn" data-color="#ff9500" style="background: #ff9500;"></button>
+                        <button class="color-btn" data-color="#34c759" style="background: #34c759;"></button>
+                        <button class="color-btn" data-color="#007aff" style="background: #007aff;"></button>
+                        <button class="color-btn" data-color="#af52de" style="background: #af52de;"></button>
+                        <button class="color-btn" data-color="#ffffff" style="background: #ffffff;"></button>
+                    </div>
+                </div>
+
+                <div class="toggle-row">
+                    <span class="toggle-label">진동</span>
+                    <div class="toggle" id="vibrationToggle"></div>
+                </div>
+            </div>
+
+            <!-- 문구 설정 탭 -->
+            <div class="tab-content" id="tab-motivation" style="display: none;">
+                <div class="motivation-input-container">
+                    <input type="text" class="motivation-input" id="newMotivation" placeholder="새 문구 입력 후 엔터...">
+                </div>
+                <div class="motivation-list" id="motivationList"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 예상치 입력 모달 (세션 시작 전) -->
+    <div class="modal-overlay" id="predictModal">
+        <div class="modal">
+            <div class="modal-header">
+                <div class="modal-title">🎯 이번 세션 목표</div>
+                <button class="modal-close" id="closePredictModal">✕</button>
+            </div>
+            <div class="meta-input-group">
+                <label class="meta-input-label">이번 25분에 몇 개 처리할 것 같아?</label>
+                <input type="number" class="meta-input" id="predictInput" placeholder="0" inputmode="numeric">
+            </div>
+            <button class="meta-btn" id="startWithPrediction">세션 시작 ▶</button>
+        </div>
+    </div>
+
+    <!-- 실제치 입력 모달 (세션 종료 후) -->
+    <div class="modal-overlay" id="actualModal">
+        <div class="modal">
+            <div class="modal-header">
+                <div class="modal-title">✅ 세션 완료!</div>
+                <button class="modal-close" id="closeActualModal">✕</button>
+            </div>
+            <div class="meta-input-group">
+                <label class="meta-input-label">예상: <span id="showPredicted">0</span>개</label>
+                <label class="meta-input-label" style="margin-top: 1rem;">실제로 몇 개 처리했어?</label>
+                <input type="number" class="meta-input" id="actualInput" placeholder="0" inputmode="numeric">
+            </div>
+            <button class="meta-btn" id="saveActual">기록 저장</button>
+        </div>
+    </div>
+
+    <!-- 리포트 모달 -->
+    <div class="modal-overlay" id="reportModal">
+        <div class="modal">
+            <div class="modal-header">
+                <div class="modal-title">📊 메타인지 리포트</div>
+                <button class="modal-close" id="closeReport">✕</button>
+            </div>
+
+            <div class="report-section">
+                <div class="report-title">오늘 요약</div>
+                <div class="report-grid">
+                    <div class="report-card">
+                        <div class="report-value" id="reportSessions">0</div>
+                        <div class="report-label">완료 세션</div>
+                    </div>
+                    <div class="report-card">
+                        <div class="report-value" id="reportTotal">0</div>
+                        <div class="report-label">총 처리량</div>
+                    </div>
+                    <div class="report-card">
+                        <div class="report-value" id="reportAvgAccuracy">-</div>
+                        <div class="report-label">평균 정확도</div>
+                    </div>
+                    <div class="report-card">
+                        <div class="report-value" id="reportTrend">-</div>
+                        <div class="report-label">경향</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="report-section">
+                <div class="report-title">세션별 기록</div>
+                <div class="meta-history" id="metaHistory"></div>
+            </div>
+
+            <button class="reset-btn" id="resetAll">모든 기록 초기화</button>
+        </div>
+    </div>
+
+    <script>
+        // === 상태 관리 ===
+        const state = {
+            isRunning: false,
+            mode: 'focus', // focus, rest
+            timeLeft: 25 * 60,
+            totalTime: 25 * 60,
+            currentPrediction: 0,
+            paceCounter: 0,
+            motivationIndex: 0,
+            settings: {
+                focusTime: 25,
+                restTime: 5,
+                paceInterval: 10,
+                flashStyle: 'border',
+                flashColor: '#ff6b35',
+                vibration: false,
+                theme: 'soft-dark',
+                fontSize: 'normal',
+                brightness: 100
+            },
+            motivations: [
+                "교지불여졸속 - 80점으로 먼저 끝내고 다듬자",
+                "한 문제 30초, 고민은 2분 이내!",
+                "악착 - 목표 달성까지 절대 놓지 마라",
+                "존재감 - 네 전문성이 빛나는 곳에서 차이를 만들어라",
+                "Anki 3초 룰 - 빠르게, 빠르게!",
+                "지금 이 25분이 합격을 만든다"
+            ],
+            records: [] // { session, predicted, actual, accuracy }
+        };
+
+        // === DOM 요소 ===
+        const els = {
+            timeDisplay: document.getElementById('timeDisplay'),
+            modeLabel: document.getElementById('modeLabel'),
+            progressRing: document.getElementById('progressRing'),
+            mainBtn: document.getElementById('mainBtn'),
+            resetBtn: document.getElementById('resetBtn'),
+            skipBtn: document.getElementById('skipBtn'),
+            todaySession: document.getElementById('todaySession'),
+            totalProblems: document.getElementById('totalProblems'),
+            avgAccuracy: document.getElementById('avgAccuracy'),
+            focusMinutes: document.getElementById('focusMinutes'),
+            motivationText: document.getElementById('motivationText'),
+            fullscreenFlash: document.getElementById('fullscreenFlash'),
+            borderFlash: document.getElementById('borderFlash'),
+            brightnessOverlay: document.getElementById('brightnessOverlay'),
+            settingsModal: document.getElementById('settingsModal'),
+            predictModal: document.getElementById('predictModal'),
+            actualModal: document.getElementById('actualModal'),
+            reportModal: document.getElementById('reportModal'),
+            motivationList: document.getElementById('motivationList'),
+            metaHistory: document.getElementById('metaHistory')
+        };
+
+        // === 초기화 ===
+        function init() {
+            loadFromStorage();
+            applyTheme();
+            applyFontSize();
+            applyBrightness();
+            updateDisplay();
+            updateStats();
+            renderMotivationList();
+            setupEventListeners();
+            startMotivationCycle();
+        }
+
+        // === 테마 & 디스플레이 ===
+        function applyTheme() {
+            document.documentElement.setAttribute('data-theme', state.settings.theme);
+            // 설정 버튼 활성화 상태 업데이트
+            document.querySelectorAll('[data-theme]').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.theme === state.settings.theme);
+            });
+        }
+
+        function applyFontSize() {
+            document.documentElement.setAttribute('data-font-size', state.settings.fontSize);
+            document.querySelectorAll('[data-font-size]').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.fontSize === state.settings.fontSize);
+            });
+        }
+
+        function applyBrightness() {
+            const opacity = (100 - state.settings.brightness) / 100;
+            els.brightnessOverlay.style.opacity = opacity;
+            document.getElementById('brightnessSlider').value = state.settings.brightness;
+            document.getElementById('brightnessValue').textContent = state.settings.brightness + '%';
+        }
+
+        // === 로컬 스토리지 ===
+        function loadFromStorage() {
+            const saved = localStorage.getItem('pomodoro_v2');
+            if (saved) {
+                const data = JSON.parse(saved);
+                if (data.settings) Object.assign(state.settings, data.settings);
+                if (data.motivations) state.motivations = data.motivations;
+                if (data.records) {
+                    // 오늘 기록만 필터링
+                    const today = new Date().toDateString();
+                    state.records = data.records.filter(r => r.date === today);
+                }
+            }
+        }
+
+        function saveToStorage() {
+            const data = {
+                settings: state.settings,
+                motivations: state.motivations,
+                records: state.records
+            };
+            localStorage.setItem('pomodoro_v2', JSON.stringify(data));
+        }
+
+        // === 타이머 기능 ===
+        let timerInterval = null;
+        let motivationInterval = null;
+
+        function startTimer() {
+            state.isRunning = true;
+            els.mainBtn.innerHTML = '⏸';
+            
+            timerInterval = setInterval(() => {
+                state.timeLeft--;
+                state.paceCounter++;
+
+                // 페이스 깜빡임
+                if (state.mode === 'focus' && state.settings.paceInterval > 0) {
+                    if (state.paceCounter >= state.settings.paceInterval) {
+                        state.paceCounter = 0;
+                        triggerFlash();
+                    }
+                }
+
+                updateDisplay();
+
+                if (state.timeLeft <= 0) {
+                    completeSession();
+                }
+            }, 1000);
+        }
+
+        function pauseTimer() {
+            state.isRunning = false;
+            els.mainBtn.innerHTML = '▶';
+            clearInterval(timerInterval);
+        }
+
+        function resetTimer() {
+            pauseTimer();
+            state.timeLeft = state.mode === 'focus' ? 
+                state.settings.focusTime * 60 : 
+                state.settings.restTime * 60;
+            state.totalTime = state.timeLeft;
+            state.paceCounter = 0;
+            updateDisplay();
+        }
+
+        function completeSession() {
+            pauseTimer();
+            
+            if (state.settings.vibration && navigator.vibrate) {
+                navigator.vibrate([200, 100, 200]);
+            }
+
+            if (state.mode === 'focus') {
+                // 실제치 입력 모달 표시
+                document.getElementById('showPredicted').textContent = state.currentPrediction;
+                document.getElementById('actualInput').value = '';
+                els.actualModal.classList.add('active');
+            } else {
+                // 휴식 끝 -> 집중 모드로
+                switchMode('focus');
+            }
+        }
+
+        function switchMode(mode) {
+            state.mode = mode;
+            state.timeLeft = mode === 'focus' ? 
+                state.settings.focusTime * 60 : 
+                state.settings.restTime * 60;
+            state.totalTime = state.timeLeft;
+            state.paceCounter = 0;
+
+            els.modeLabel.textContent = mode === 'focus' ? '집중' : '휴식';
+            els.mainBtn.classList.toggle('rest', mode === 'rest');
+            els.progressRing.style.stroke = mode === 'focus' ? 
+                'var(--accent-focus)' : 'var(--accent-rest)';
+
+            updateDisplay();
+        }
+
+        // === 깜빡임 ===
+        function triggerFlash() {
+            const flashEl = state.settings.flashStyle === 'fullscreen' ? 
+                els.fullscreenFlash : els.borderFlash;
+            
+            // 색상 적용
+            flashEl.style.setProperty(
+                state.settings.flashStyle === 'fullscreen' ? 'background' : 'border-color',
+                state.settings.flashColor
+            );
+
+            flashEl.classList.add('active');
+            
+            if (state.settings.vibration && navigator.vibrate) {
+                navigator.vibrate(50);
+            }
+
+            setTimeout(() => {
+                flashEl.classList.remove('active');
+            }, 300);
+        }
+
+        // === 동기부여 문구 순환 ===
+        function startMotivationCycle() {
+            motivationInterval = setInterval(() => {
+                if (state.isRunning && state.mode === 'focus' && state.motivations.length > 0) {
+                    state.motivationIndex = (state.motivationIndex + 1) % state.motivations.length;
+                    els.motivationText.style.animation = 'none';
+                    els.motivationText.offsetHeight; // reflow
+                    els.motivationText.style.animation = 'fadeInText 0.5s ease';
+                    els.motivationText.textContent = state.motivations[state.motivationIndex];
+                }
+            }, 8000);
+        }
+
+        // === UI 업데이트 ===
+        function updateDisplay() {
+            const minutes = Math.floor(state.timeLeft / 60);
+            const seconds = state.timeLeft % 60;
+            els.timeDisplay.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+
+            // 프로그레스 링
+            const circumference = 2 * Math.PI * 130;
+            const progress = state.timeLeft / state.totalTime;
+            els.progressRing.style.strokeDashoffset = circumference * (1 - progress);
+        }
+
+        function updateStats() {
+            const sessions = state.records.length;
+            const totalProblems = state.records.reduce((sum, r) => sum + (r.actual || 0), 0);
+            const focusMinutes = sessions * state.settings.focusTime;
+
+            els.todaySession.textContent = sessions;
+            els.totalProblems.textContent = totalProblems;
+            els.focusMinutes.textContent = focusMinutes;
+
+            // 평균 예측 정확도
+            if (sessions > 0) {
+                const avgAcc = state.records.reduce((sum, r) => sum + (r.accuracy || 0), 0) / sessions;
+                els.avgAccuracy.textContent = `${Math.round(avgAcc)}%`;
+                els.avgAccuracy.className = 'stat-value ' + getAccuracyClass(avgAcc);
+            } else {
+                els.avgAccuracy.textContent = '-';
+            }
+        }
+
+        function getAccuracyClass(accuracy) {
+            if (accuracy >= 80) return 'good';
+            if (accuracy >= 50) return 'warn';
+            return 'bad';
+        }
+
+        // === 메타인지 기록 ===
+        function saveMetaRecord(predicted, actual) {
+            const accuracy = predicted > 0 ? 
+                Math.round(Math.min(actual / predicted, predicted / actual) * 100) : 0;
+
+            state.records.push({
+                session: state.records.length + 1,
+                predicted,
+                actual,
+                accuracy,
+                date: new Date().toDateString()
+            });
+
+            saveToStorage();
+            updateStats();
+        }
+
+        function renderMetaHistory() {
+            els.metaHistory.innerHTML = state.records.map(r => `
+                <div class="meta-history-item">
+                    <span class="meta-session">세션 ${r.session}</span>
+                    <div class="meta-numbers">
+                        <span class="meta-predicted">${r.predicted}예상</span>
+                        <span class="meta-actual">${r.actual}실제</span>
+                    </div>
+                    <span class="meta-accuracy ${getAccuracyClass(r.accuracy)}">${r.accuracy}%</span>
+                </div>
+            `).reverse().join('');
+        }
+
+        // === 문구 관리 ===
+        function renderMotivationList() {
+            els.motivationList.innerHTML = state.motivations.map((m, i) => `
+                <div class="motivation-item">
+                    <span class="motivation-item-text">${m}</span>
+                    <button class="motivation-item-delete" data-index="${i}">✕</button>
+                </div>
+            `).join('');
+        }
+
+        // === 리포트 ===
+        function updateReport() {
+            const sessions = state.records.length;
+            const total = state.records.reduce((sum, r) => sum + (r.actual || 0), 0);
+            const avgAcc = sessions > 0 ? 
+                state.records.reduce((sum, r) => sum + (r.accuracy || 0), 0) / sessions : 0;
+
+            document.getElementById('reportSessions').textContent = sessions;
+            document.getElementById('reportTotal').textContent = total;
+            document.getElementById('reportAvgAccuracy').textContent = sessions > 0 ? `${Math.round(avgAcc)}%` : '-';
+            document.getElementById('reportAvgAccuracy').className = 'report-value ' + getAccuracyClass(avgAcc);
+
+            // 경향 분석
+            let trend = '-';
+            if (sessions >= 3) {
+                const recent = state.records.slice(-3);
+                const avgPredicted = recent.reduce((s, r) => s + r.predicted, 0) / 3;
+                const avgActual = recent.reduce((s, r) => s + r.actual, 0) / 3;
+                if (avgActual > avgPredicted * 1.1) trend = '과소평가';
+                else if (avgActual < avgPredicted * 0.9) trend = '과신';
+                else trend = '정확';
+            }
+            document.getElementById('reportTrend').textContent = trend;
+            document.getElementById('reportTrend').className = 'report-value ' + 
+                (trend === '정확' ? 'good' : trend === '-' ? '' : 'warn');
+
+            renderMetaHistory();
+        }
+
+        // === 이벤트 리스너 ===
+        function setupEventListeners() {
+            // 메인 버튼
+            els.mainBtn.addEventListener('click', () => {
+                if (state.isRunning) {
+                    pauseTimer();
+                } else {
+                    // 집중 모드 시작 시 예상치 입력
+                    if (state.mode === 'focus' && state.timeLeft === state.totalTime) {
+                        document.getElementById('predictInput').value = '';
+                        els.predictModal.classList.add('active');
+                    } else {
+                        startTimer();
+                    }
+                }
+            });
+
+            // 리셋 버튼
+            els.resetBtn.addEventListener('click', resetTimer);
+
+            // 스킵 버튼
+            els.skipBtn.addEventListener('click', () => {
+                if (state.mode === 'focus') {
+                    switchMode('rest');
+                } else {
+                    switchMode('focus');
+                }
+            });
+
+            // 설정 모달
+            document.getElementById('settingsBtn').addEventListener('click', () => {
+                els.settingsModal.classList.add('active');
+            });
+            document.getElementById('closeSettings').addEventListener('click', () => {
+                els.settingsModal.classList.remove('active');
+            });
+
+            // 리포트 모달
+            document.getElementById('reportBtn').addEventListener('click', () => {
+                updateReport();
+                els.reportModal.classList.add('active');
+            });
+            document.getElementById('closeReport').addEventListener('click', () => {
+                els.reportModal.classList.remove('active');
+            });
+
+            // 탭 전환
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    const tabId = btn.dataset.tab;
+                    document.querySelectorAll('.tab-content').forEach(c => c.style.display = 'none');
+                    document.getElementById('tab-' + tabId).style.display = 'block';
+                });
+            });
+
+            // 집중 시간 설정
+            document.querySelectorAll('[data-focus]').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    document.querySelectorAll('[data-focus]').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    state.settings.focusTime = parseInt(btn.dataset.focus);
+                    if (state.mode === 'focus' && !state.isRunning) {
+                        state.timeLeft = state.settings.focusTime * 60;
+                        state.totalTime = state.timeLeft;
+                        updateDisplay();
+                    }
+                    saveToStorage();
+                });
+            });
+
+            // 휴식 시간 설정
+            document.querySelectorAll('[data-rest]').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    document.querySelectorAll('[data-rest]').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    state.settings.restTime = parseInt(btn.dataset.rest);
+                    if (state.mode === 'rest' && !state.isRunning) {
+                        state.timeLeft = state.settings.restTime * 60;
+                        state.totalTime = state.timeLeft;
+                        updateDisplay();
+                    }
+                    saveToStorage();
+                });
+            });
+
+            // 페이스 간격 설정
+            document.querySelectorAll('[data-pace]').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    document.querySelectorAll('[data-pace]').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    state.settings.paceInterval = parseInt(btn.dataset.pace);
+                    saveToStorage();
+                });
+            });
+
+            // 깜빡임 스타일 설정
+            document.querySelectorAll('[data-flash-style]').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    document.querySelectorAll('[data-flash-style]').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    state.settings.flashStyle = btn.dataset.flashStyle;
+                    saveToStorage();
+                });
+            });
+
+            // 색상 설정
+            document.querySelectorAll('.color-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    document.querySelectorAll('.color-btn').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    state.settings.flashColor = btn.dataset.color;
+                    saveToStorage();
+                });
+            });
+
+            // 진동 토글
+            document.getElementById('vibrationToggle').addEventListener('click', function() {
+                this.classList.toggle('active');
+                state.settings.vibration = this.classList.contains('active');
+                saveToStorage();
+            });
+
+            // 테마 설정
+            document.querySelectorAll('[data-theme]').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    document.querySelectorAll('[data-theme]').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    state.settings.theme = btn.dataset.theme;
+                    applyTheme();
+                    saveToStorage();
+                });
+            });
+
+            // 글씨 크기 설정
+            document.querySelectorAll('[data-font-size]').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    document.querySelectorAll('[data-font-size]').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    state.settings.fontSize = btn.dataset.fontSize;
+                    applyFontSize();
+                    saveToStorage();
+                });
+            });
+
+            // 밝기 슬라이더
+            document.getElementById('brightnessSlider').addEventListener('input', (e) => {
+                state.settings.brightness = parseInt(e.target.value);
+                applyBrightness();
+                saveToStorage();
+            });
+
+            // 문구 추가
+            document.getElementById('newMotivation').addEventListener('keypress', (e) => {
+                if (e.key === 'Enter' && e.target.value.trim()) {
+                    state.motivations.push(e.target.value.trim());
+                    e.target.value = '';
+                    renderMotivationList();
+                    saveToStorage();
+                }
+            });
+
+            // 문구 삭제
+            els.motivationList.addEventListener('click', (e) => {
+                if (e.target.classList.contains('motivation-item-delete')) {
+                    const index = parseInt(e.target.dataset.index);
+                    state.motivations.splice(index, 1);
+                    renderMotivationList();
+                    saveToStorage();
+                }
+            });
+
+            // 예상치 입력 모달
+            document.getElementById('closePredictModal').addEventListener('click', () => {
+                els.predictModal.classList.remove('active');
+            });
+            document.getElementById('startWithPrediction').addEventListener('click', () => {
+                state.currentPrediction = parseInt(document.getElementById('predictInput').value) || 0;
+                els.predictModal.classList.remove('active');
+                startTimer();
+            });
+
+            // 실제치 입력 모달
+            document.getElementById('closeActualModal').addEventListener('click', () => {
+                els.actualModal.classList.remove('active');
+                switchMode('rest');
+            });
+            document.getElementById('saveActual').addEventListener('click', () => {
+                const actual = parseInt(document.getElementById('actualInput').value) || 0;
+                saveMetaRecord(state.currentPrediction, actual);
+                els.actualModal.classList.remove('active');
+                switchMode('rest');
+            });
+
+            // 전체 초기화
+            document.getElementById('resetAll').addEventListener('click', () => {
+                if (confirm('모든 기록을 초기화할까요?')) {
+                    state.records = [];
+                    saveToStorage();
+                    updateStats();
+                    updateReport();
+                    els.reportModal.classList.remove('active');
+                }
+            });
+
+            // 모달 외부 클릭 시 닫기
+            [els.settingsModal, els.reportModal].forEach(modal => {
+                modal.addEventListener('click', (e) => {
+                    if (e.target === modal) {
+                        modal.classList.remove('active');
+                    }
+                });
+            });
+        }
+
+        // 앱 시작
+        init();
+    </script>
+</body>
+</html>
